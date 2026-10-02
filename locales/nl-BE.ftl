@@ -2,3 +2,5 @@
 
 salesdemo-display-name = sales demo
 salesdemo-description = Een boom om een product samen te stellen: kies de onderdelen van een luchtbehandelingskast en voeg de optionele toe.
+
+salesdemo-tutorial = Verkoopdemo, uit de store: een configurator voor luchtbehandelingskasten die toont hoe complexe, bewerkbare, hiërarchische data in Sicompass werkt.
