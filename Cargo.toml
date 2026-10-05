@@ -3,7 +3,7 @@
 
 [package]
 name = "salesdemo-plugin"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "GPL-3.0-only"
 description = "The sales demo for sicompass: a product configuration tree, as a plugin"
