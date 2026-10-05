@@ -1,4 +1,4 @@
-//! The sales demo, a sicompass WASM plugin.
+//! The sales demo, a sicompass plugin.
 //!
 //! Walks a product-configuration tree (`assets/equipment1.json`) and renders it as
 //! FFON: mandatory entries appear directly, optional ones are offered under an
@@ -7,23 +7,24 @@
 //!
 //! It was a built-in of the sicompass app (`lib/lib_sales_demo`, before that a
 //! TypeScript script) and is the pilot of the move to plugins installed from
-//! the Store: the same code, in the sandbox, with no permissions at all. Its
-//! only data are its own assets.
+//! the Store. It asks for no permissions at all: its only data are its own
+//! assets.
 //!
-//! [`Demo`] is the tree logic, host-independent and unit-tested natively;
-//! [`SalesDemo`] connects it to the plugin interface.
+//! [`Demo`] is the tree logic, host-independent and unit-tested;
+//! [`SalesDemo`] connects it to the plugin interface, and `src/main.rs` makes
+//! it the program.
 
 use serde::Deserialize;
 use serde::de::{self, Deserializer, MapAccess, SeqAccess, Visitor};
-use sicompass_pdk::{DashboardKind, Descriptor, Plugin, export_plugin, host};
+use sicompass_sdk::plugin::{DashboardKind, Descriptor, Plugin, host};
 use sicompass_sdk::{FfonElement, FfonObject};
 
-/// The product tree, compiled into the component. It is fixed data, and
+/// The product tree, compiled into the program. It is fixed data, and
 /// compiled in it cannot go missing.
 const EQUIPMENT_JSON: &str = include_str!("../assets/equipment1.json");
 
 /// The diagram shown by `d` at the root: a file in this plugin's `assets/`,
-/// which the host reads and scales itself, so its bytes never cross the sandbox.
+/// which the host reads and scales itself, so the plugin never reads it.
 const DASHBOARD_IMAGE_FILE: &str = "115-Draw-through-Air-Handling-Unit-Diagram-1.webp";
 
 /// The plugin's name, as in `plugin.json`. A plugin's `asset:` namespace is its
@@ -512,7 +513,7 @@ impl Plugin for SalesDemo {
     }
 
     fn dashboard_image_path(&self) -> Option<String> {
-        Some(sicompass_pdk::assets::uri(
+        Some(sicompass_sdk::plugin::assets::uri(
             PLUGIN_NAME,
             DASHBOARD_IMAGE_FILE,
         ))
@@ -522,8 +523,6 @@ impl Plugin for SalesDemo {
         self.demo.create_element(key)
     }
 }
-
-export_plugin!(SalesDemo);
 
 #[cfg(test)]
 mod tests {
@@ -618,7 +617,7 @@ mod tests {
         // host enforces.
         assert_eq!(
             DASHBOARD_IMAGE_URI,
-            sicompass_pdk::assets::uri(PLUGIN_NAME, DASHBOARD_IMAGE_FILE)
+            sicompass_sdk::plugin::assets::uri(PLUGIN_NAME, DASHBOARD_IMAGE_FILE)
         );
         let manifest: serde_json::Value =
             serde_json::from_str(include_str!("../plugin.json")).unwrap();

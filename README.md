@@ -11,8 +11,7 @@ element:", and pressing one adds it to the configuration, with its own options.
 Press d at the top to see the unit's diagram. A configuration can be saved to a
 file and opened again.
 
-It runs in the Sicompass sandbox and asks for no access at all: it reads only
-the files it ships with.
+It asks for no access at all: it reads only the files it ships with.
 
 ## Install
 
@@ -20,28 +19,29 @@ In Sicompass, open store, then programs, and press Enter on install next to
 sales demo. The Store checks the release's signature before installing it, and
 keeps it up to date.
 
-To install a build of your own instead, copy `plugin.json`, `plugin.wasm`,
-`assets/` and `locales/` into a folder named `salesdemo` in the Sicompass
-plugins folder (`~/.config/sicompass/plugins/` on Linux) and restart Sicompass.
+To install a build of your own instead, copy `plugin.json`, the built
+`plugin` program (`plugin.exe` on Windows), `assets/` and `locales/` into a
+folder named `salesdemo` in the Sicompass plugins folder
+(`~/.config/sicompass/plugins/` on Linux, `~/Library/Application
+Support/sicompass/plugins/` on macOS) and restart Sicompass.
 
 ## Building from source
 
 ```bash
-nix develop          # the toolchain, with the wasm32-wasip2 target
-cargo test           # the tree logic, natively
-cargo build --release --target wasm32-wasip2
-cp target/wasm32-wasip2/release/salesdemo_plugin.wasm plugin.wasm
+nix develop          # the toolchain
+cargo test           # the tree logic
+cargo build --release
+cp target/release/salesdemo-plugin plugin
 ```
 
-`./scripts/release-plugin.sh --dry-run` does the build, checks the component
-against `plugin.json`, and signs and verifies it with a throwaway key, the way
-a release is made.
+`./scripts/release-plugin.sh --dry-run` builds this computer's release, packs
+it, and signs and verifies it with a throwaway key, the way a release is made.
 
 ## Related repositories
 
 - [sicompass](https://github.com/friendlyflow/sicompass), the application
 - [sicompass-plugin-sdk](https://github.com/friendlyflow/sicompass-plugin-sdk),
-  the SDK and the WASM plugin kit
+  the SDK and the plugin kit
 
 ## Community
 

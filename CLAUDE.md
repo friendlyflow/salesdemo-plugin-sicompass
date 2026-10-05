@@ -8,23 +8,25 @@ usually driven from a sicompass checkout next to this one (`../sicompass`), whos
 as their first argument and then follow the skills in this repo's
 `.claude/skills/`.
 
-It is a sicompass **WASM plugin**: a `cdylib` built for `wasm32-wasip2` with
-`sicompass-pdk`, installed by the sicompass Store from this repo's GitHub
-releases. It needs no permissions: its only data are its own `assets/`. The
-plugin platform is described in `../sicompass/docs/plugin-platform.md` and
-`../sicompass/docs/wasm-plugins.md`.
+It is a sicompass **plugin process**: a program (`src/main.rs`) built with the
+SDK's `plugin` feature, which sicompass starts and talks to over its stdin and
+stdout. The Store installs it from this repo's GitHub releases, one build per
+platform. It needs no permissions: its only data are its own `assets/`. The
+plugin platform is described in `../sicompass/docs/plugin-platform.md`.
 
 - `plugin.json` is the manifest. Its `name` (`salesdemo`) is also the `asset:`
   namespace and the install folder, and its `version` must equal the release tag.
 - `locales/<lang>.ftl`, every id prefixed `salesdemo-`, in all four languages.
-- `Demo` is the tree logic, tested natively with `cargo test`. `SalesDemo`
-  implements `sicompass_pdk::Plugin` on top of it.
+- `Demo` is the tree logic, tested with `cargo test`. `SalesDemo` implements
+  `sicompass_sdk::plugin::Plugin` on top of it, and `src/main.rs` makes it the
+  program.
 
 ## Environment (Nix)
 
 The toolchain comes from the flake dev shell in [flake.nix](flake.nix): Rust
-from rust-overlay with the `wasm32-wasip2` target (nixpkgs' rustc has no `std`
-for it), `wasm-tools` and `jq`. Nothing is installed system-wide.
+from rust-overlay with this computer's plugin target (static musl on Linux,
+which nixpkgs' rustc has no `std` for) and `jq`. Nothing is installed
+system-wide.
 
 - **Check once per session**, then stick with the answer: `command -v cargo`.
   - Non-empty: the shell is inside `nix develop`, so run `cargo ...` directly.
@@ -52,8 +54,8 @@ instead, or split into separate sentences.
 ## Testing
 
 - After implementing changes, always run the tests before finishing:
-  `cargo test` (natively), and `./scripts/release-plugin.sh --dry-run`, which
-  also builds the component and audits its imports.
+  `cargo test`, and `./scripts/release-plugin.sh --dry-run`, which also builds
+  this computer's release and verifies it the way the Store will.
 - When adding new code, write or update tests.
 - If tests fail, fix the code. Never leave a task with failing tests.
 
@@ -76,6 +78,10 @@ against the `PLUGIN_PUBLIC_KEY` variable, the key the sicompass store list
 names. The secret key file is `~/.config/sicompass/plugin-keys/salesdemo.key`
 on the maintainer's machine. Never print, copy or commit it.
 
-The SDK and the pdk come from crates.io (the source is
-`../sicompass-plugin-sdk`). The commented-out `[patch]` in `Cargo.toml` is for
-working on them together, and stays commented on main.
+The SDK comes from crates.io (the source is `../sicompass-plugin-sdk`). The
+commented-out `[patch]` in `Cargo.toml` is for working on them together, and
+stays commented on main.
+
+A release has one archive per platform. The release workflow builds them on
+five runners (Linux x86_64 and arm64 as static musl, macOS arm64 and x86_64,
+Windows x86_64), then packs, signs and verifies them in one job.
