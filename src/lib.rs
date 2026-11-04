@@ -954,6 +954,86 @@ mod tests {
         Plugin::set_current_path(&mut p, "/no such entry");
         assert!(!p.poll().structural_edit_here);
     }
+
+    // --- markup: `plugin.json` asks for it, and nothing here comes from outside ---
+
+    /// Every key and string of the tree, down to the bottom. The only rows there are:
+    /// the tree is compiled in, and nothing typed or read reaches a row through this
+    /// plugin (the app writes a typed value into the row itself, and escapes it).
+    fn all_rows(elements: &[FfonElement], out: &mut Vec<String>) {
+        for e in elements {
+            match e {
+                FfonElement::Str(s) => out.push(s.clone()),
+                FfonElement::Obj(o) => {
+                    out.push(o.key.clone());
+                    all_rows(&o.children, out);
+                }
+            }
+        }
+    }
+
+    /// The rows of every level of `node`, the optional parts behind a button too.
+    fn rows_below(node: &Node, out: &mut Vec<String>) {
+        match node {
+            Node::Object(entries) => {
+                all_rows(&build_display_children(node), out);
+                for (key, value) in entries {
+                    if let Some(raw) = value.as_array() {
+                        all_rows(std::slice::from_ref(&build_item(key, raw)), out);
+                    }
+                    rows_below(value, out);
+                }
+            }
+            Node::Array(items) => items.iter().for_each(|item| rows_below(item, out)),
+            _ => {}
+        }
+    }
+
+    fn whole_tree() -> Vec<String> {
+        let root: Node = serde_json::from_str(EQUIPMENT_JSON).unwrap();
+        let mut rows = Vec::new();
+        rows_below(&root, &mut rows);
+        rows
+    }
+
+    #[test]
+    fn the_manifest_asks_for_markup() {
+        assert!(include_str!("../plugin.json").contains(r#""markup": true"#));
+    }
+
+    /// With markup on, no row of the tree may turn into a tag by accident.
+    #[test]
+    fn no_row_of_the_tree_reads_as_markup() {
+        let rows = whole_tree();
+        assert!(rows.len() > 100, "got {} rows", rows.len());
+        for row in &rows {
+            assert!(!sicompass_sdk::markup::has_markup(row), "{row}");
+            assert_eq!(sicompass_sdk::markup::style_sheet(row), None, "{row}");
+            assert_eq!(&sicompass_sdk::markup::plain(row), row, "nothing to lower");
+        }
+    }
+
+    /// The nearest thing to a tag in the data, written by whoever wrote the tree.
+    #[test]
+    fn the_arrows_in_a_name_stay_arrows() {
+        let rows = whole_tree();
+        let name = "air handling unit(s) (--> only working example in here <--)";
+        assert!(
+            rows.iter()
+                .any(|r| sicompass_sdk::tags::strip_display(r) == name),
+            "no row shows {name:?}"
+        );
+    }
+
+    /// The tree's own tags are the plugin's: they stay tags, and nothing is escaped.
+    #[test]
+    fn the_trees_own_tags_still_work() {
+        let rows = whole_tree();
+        assert!(rows.iter().any(|r| sicompass_sdk::tags::has_radio(r)));
+        assert!(rows.iter().any(|r| sicompass_sdk::tags::has_input(r)));
+        assert!(rows.iter().any(|r| sicompass_sdk::tags::has_button(r)));
+        assert!(!rows.iter().any(|r| r.contains(r"\<") || r.contains(r"\>")));
+    }
 }
 
 /// The tutorial's paragraphs about this plugin are the plugin's own:
