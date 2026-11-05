@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+- Its rows use the app's markup.
+- Needs sicompass 0.2.4.
+- Intel macs are not built any more.
+
 ## 0.3.1
 
 - Maintenance release. Nothing changes in the plugin itself.
